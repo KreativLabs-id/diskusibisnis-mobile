@@ -172,7 +172,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   const Divider(color: Color(0xFFE2E8F0)),
                   const SizedBox(height: 16),
                   const Text(
-                    '© 2024 DiskusiBisnis. All rights reserved.',
+                    '© 2025 DiskusiBisnis. All rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,

@@ -7,9 +7,9 @@ import 'services/fcm_service.dart';
 import 'services/supabase_service.dart';
 import 'services/theme_service.dart';
 import 'services/deep_link_service.dart';
+import 'services/socket_service.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_nav_screen.dart';
-import 'widgets/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +54,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
   bool _isLoading = true;
   final FCMService _fcmService = FCMService();
   final DeepLinkService _deepLinkService = DeepLinkService();
+  final SocketService _socketService = SocketService();
 
   @override
   void initState() {
@@ -68,6 +69,8 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
       // Initialize FCM if user is authenticated
       if (_isAuthenticated) {
         await _fcmService.initialize();
+        // Connect to WebSocket for real-time notifications
+        await _socketService.connect();
       }
 
       // Initialize Deep Linking
@@ -122,16 +125,14 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
     final baseTextTheme = ThemeData.light().textTheme;
     final interTextTheme = GoogleFonts.interTextTheme(baseTextTheme);
 
+    // Show splash screen while loading
     if (_isLoading) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           textTheme: interTextTheme,
         ),
-        home: SplashScreen(
-          duration: const Duration(milliseconds: 2500),
-          child: const SizedBox(), // Will be replaced when loading completes
-        ),
+        home: const _SimpleSplashScreen(),
       );
     }
 
@@ -217,6 +218,54 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
               _isAuthenticated ? const MainNavScreen() : const WelcomeScreen(),
         );
       },
+    );
+  }
+}
+
+/// Simple splash screen shown during initialization
+class _SimpleSplashScreen extends StatelessWidget {
+  const _SimpleSplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF10B981),
+                Color(0xFF059669),
+                Color(0xFF047857),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF059669).withValues(alpha: 0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Text(
+              'DB',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 42,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -1,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

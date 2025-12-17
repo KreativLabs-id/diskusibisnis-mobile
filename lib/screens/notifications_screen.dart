@@ -5,6 +5,7 @@ import 'dart:async'; // Import Timer/StreamSubscription
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/fcm_service.dart'; // Import FCMService
+import '../services/socket_service.dart'; // Import SocketService
 import '../models/notification.dart' as notif;
 import 'question_detail_screen.dart';
 
@@ -18,6 +19,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final ApiService _apiService = ApiService();
   final AuthService _authService = AuthService();
+  final SocketService _socketService = SocketService();
   bool _isLoading = true;
   bool _isLoggedIn = false;
   List<notif.Notification> _notifications = [];
@@ -28,20 +30,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _initAndLoad();
 
-    // Listen for real-time notifications
+    // Listen for real-time notifications via FCM (background/push)
     _notificationSubscription =
         FCMService().onNotificationReceived.listen((message) {
-      print("Real-time notification received: refreshing list...");
+      print("FCM notification received: refreshing list...");
       // Add a small delay to ensure backend has processed the data
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) _loadNotifications();
       });
     });
+
+    // Listen for real-time notifications via WebSocket
+    _socketService.addNotificationListener(_handleNewNotification);
+  }
+
+  void _handleNewNotification(Map<String, dynamic> data) {
+    print("[NotificationsScreen] New notification via WebSocket: $data");
+    if (mounted) {
+      // Add notification to list if not exists
+      final newNotification = notif.Notification.fromJson(data);
+      setState(() {
+        // Check if already exists
+        if (!_notifications.any((n) => n.id == newNotification.id)) {
+          _notifications.insert(0, newNotification);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    _socketService.removeNotificationListener(_handleNewNotification);
     super.dispose();
   }
 
