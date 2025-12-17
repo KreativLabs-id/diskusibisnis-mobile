@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async'; // Import Timer/StreamSubscription
 
 import '../services/api_service.dart';
@@ -105,7 +106,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _deleteNotification(notif.Notification notification, {bool showSnackbar = true}) async {
+  Future<void> _deleteNotification(notif.Notification notification,
+      {bool showSnackbar = true}) async {
     final success = await _apiService.deleteNotification(
       notification.id,
       token: _authService.token,
@@ -131,7 +133,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Notifikasi'),
-        content: const Text('Apakah Anda yakin ingin menghapus notifikasi ini?'),
+        content:
+            const Text('Apakah Anda yakin ingin menghapus notifikasi ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -210,7 +213,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Hapus Notifikasi'),
-            content: const Text('Apakah Anda yakin ingin menghapus notifikasi ini?'),
+            content:
+                const Text('Apakah Anda yakin ingin menghapus notifikasi ini?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -230,7 +234,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _notifications.removeWhere((n) => n.id == notification.id);
         });
         // Then call API in background
-        _apiService.deleteNotification(notification.id, token: _authService.token);
+        _apiService.deleteNotification(notification.id,
+            token: _authService.token);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Notifikasi dihapus'),
@@ -368,22 +373,118 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     // 2. Navigate based on link
-    if (notification.link != null) {
-      // Expected format: /questions/123 or full url
-      final uri = Uri.parse(notification.link!);
-      // If path segments contains 'questions', get the next segment
-      if (uri.pathSegments.contains('questions')) {
-        final index = uri.pathSegments.indexOf('questions');
-        if (index + 1 < uri.pathSegments.length) {
-          final questionId = uri.pathSegments[index + 1];
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  QuestionDetailScreen(questionId: questionId),
-            ),
-          );
+    if (notification.link != null && notification.link!.isNotEmpty) {
+      final link = notification.link!;
+
+      // Handle external URLs (http/https)
+      if (link.startsWith('http://') || link.startsWith('https://')) {
+        // Open in external browser
+        try {
+          final uri = Uri.parse(link);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Tidak dapat membuka: $link'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: $e'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         }
+        return;
+      }
+
+      // Parse internal path
+      final uri = Uri.parse(link);
+      final pathSegments = uri.pathSegments;
+
+      if (pathSegments.isEmpty || link == '/') {
+        // Home - just go back or do nothing
+        return;
+      }
+
+      final firstSegment = pathSegments.isNotEmpty ? pathSegments[0] : '';
+
+      switch (firstSegment) {
+        case 'questions':
+          if (pathSegments.length > 1) {
+            final secondSegment = pathSegments[1];
+            if (secondSegment == 'ask') {
+              // Navigate to ask question screen
+              // Navigator.push(context, MaterialPageRoute(builder: (_) => AskQuestionScreen()));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Buat pertanyaan baru'),
+                    backgroundColor: Color(0xFF059669),
+                  ),
+                );
+              }
+            } else {
+              // Navigate to question detail
+              final questionId = secondSegment;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      QuestionDetailScreen(questionId: questionId),
+                ),
+              );
+            }
+          } else {
+            // Navigate to questions list (go to home with questions tab)
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+          break;
+
+        case 'communities':
+          if (pathSegments.length > 1) {
+            // Navigate to specific community
+            // final communitySlug = pathSegments[1];
+            // Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityDetailScreen(slug: communitySlug)));
+          }
+          // For now, go back to home (communities are accessible from there)
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          break;
+
+        case 'leaderboard':
+          // Navigate to leaderboard/users list
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          // TODO: Navigate to leaderboard tab
+          break;
+
+        case 'settings':
+          // Navigate to settings
+          // Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen()));
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          break;
+
+        case 'about':
+          // Handle about pages like /about/bantuan
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          break;
+
+        case 'notifications':
+          // Already on notifications screen, do nothing
+          break;
+
+        default:
+          // Unknown path, just go home
+          Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
   }
@@ -405,10 +506,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         color = const Color(0xFFEA580C); // Orange 600
         bg = const Color(0xFFFFEDD5); // Orange 100
         break;
-      case 'system':
-        icon = LucideIcons.alertCircle;
+      case 'warning':
+        icon = LucideIcons.alertTriangle;
         color = const Color(0xFFDC2626); // Red 600
         bg = const Color(0xFFFEE2E2); // Red 100
+        break;
+      case 'update':
+        icon = LucideIcons.checkCircle;
+        color = const Color(0xFF16A34A); // Green 600
+        bg = const Color(0xFFDCFCE7); // Green 100
+        break;
+      case 'promo':
+        icon = LucideIcons.gift;
+        color = const Color(0xFF9333EA); // Purple 600
+        bg = const Color(0xFFF3E8FF); // Purple 100
+        break;
+      case 'system':
+        icon = LucideIcons.info;
+        color = const Color(0xFF2563EB); // Blue 600
+        bg = const Color(0xFFDBEAFE); // Blue 100
         break;
       default:
         icon = LucideIcons.bell;
