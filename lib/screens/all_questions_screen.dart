@@ -6,7 +6,8 @@ import '../models/question.dart';
 import '../widgets/question_card.dart';
 
 class AllQuestionsScreen extends StatefulWidget {
-  const AllQuestionsScreen({super.key});
+  final String initialSort;
+  const AllQuestionsScreen({super.key, this.initialSort = 'newest'});
 
   @override
   State<AllQuestionsScreen> createState() => _AllQuestionsScreenState();
@@ -17,11 +18,12 @@ class _AllQuestionsScreenState extends State<AllQuestionsScreen> {
   List<Question> _questions = [];
   bool _isLoading = true;
   String _error = '';
-  String _activeSort = 'newest';
+  late String _activeSort;
 
   @override
   void initState() {
     super.initState();
+    _activeSort = widget.initialSort;
     _loadQuestions();
   }
 

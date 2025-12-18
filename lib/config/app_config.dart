@@ -2,10 +2,7 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  // Toggle this to switch between development and production
-  // Automatically uses production URL in release mode
-  // Set forceProduction = true to use production backend even in debug mode
-  static const bool forceProduction = true; // SET TO TRUE FOR PRODUCTION
+  static const bool forceProduction = false; // SET TO TRUE FOR PRODUCTION
 
   static bool get isProduction => kReleaseMode || forceProduction;
 

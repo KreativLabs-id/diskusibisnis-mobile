@@ -94,6 +94,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         });
       }
     } catch (e) {
+      print('Error loading notifications: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }

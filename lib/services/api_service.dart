@@ -6,6 +6,7 @@ import '../models/user_profile.dart';
 import '../models/answer.dart';
 import '../models/notification.dart' as notif;
 import '../models/community.dart';
+import '../models/ticket.dart';
 import '../models/tag.dart' as tag_model;
 import '../models/reputation_activity.dart';
 
@@ -424,6 +425,10 @@ class ApiService {
           } else if (innerData is List) {
             list = innerData;
           }
+        } else if (data is Map && data.containsKey('notifications')) {
+          list = data['notifications'];
+        } else if (data is List) {
+          list = data;
         }
 
         return list.map((json) => notif.Notification.fromJson(json)).toList();
@@ -1131,6 +1136,71 @@ class ApiService {
       if (response.statusCode != 200 && response.statusCode != 201) {
         final error = json.decode(response.body);
         throw Exception(error['message'] ?? 'Gagal mengirim laporan');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Get My Tickets
+  Future<List<Ticket>> getMyTickets(String email) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/support/my-tickets?email=$email'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final list = data['data'] as List;
+        return list.map((json) => Ticket.fromJson(json)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error getMyTickets: $e');
+      return [];
+    }
+  }
+
+  // Get Ticket Detail
+  Future<Ticket> getTicketByNumber(String ticketNumber, String email) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/support/ticket/$ticketNumber?email=$email'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return Ticket.fromJson(data['data']);
+      } else {
+        throw Exception('Gagal memuat detail tiket');
+      }
+    } catch (e) {
+      throw Exception('Error loading ticket: $e');
+    }
+  }
+
+  // Reply to Ticket
+  Future<void> replyTicket({
+    required String ticketNumber,
+    required String email,
+    required String message,
+    required String name,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/support/ticket/$ticketNumber/reply'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'message': message,
+          'name': name,
+        }),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Gagal mengirim balasan');
       }
     } catch (e) {
       rethrow;

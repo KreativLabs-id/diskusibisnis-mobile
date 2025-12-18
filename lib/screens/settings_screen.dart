@@ -39,13 +39,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadUserData() async {
     await _authService.init();
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _user = _authService.currentUser;
-      _nameController = TextEditingController(text: _user?.displayName ?? '');
-      _bioController = TextEditingController(text: _user?.bio ?? '');
-      _emailNotifications = prefs.getBool('email_notifications') ?? true;
-      _isLoading = false;
-    });
+
+    UserProfile? currentUser = _authService.currentUser;
+
+    // Fetch fresh data from API to ensure we have the latest bio/avatar
+    if (currentUser != null) {
+      try {
+        final freshProfile = await _apiService.getProfile(currentUser.id);
+        currentUser = freshProfile;
+      } catch (e) {
+        print('Error refreshing profile in settings: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _user = currentUser;
+        _nameController = TextEditingController(text: _user?.displayName ?? '');
+        _bioController = TextEditingController(text: _user?.bio ?? '');
+        _emailNotifications = prefs.getBool('email_notifications') ?? true;
+        _isLoading = false;
+      });
+    }
   }
 
   bool get _isGoogleUser => _user?.authProvider == 'google';

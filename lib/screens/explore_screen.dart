@@ -5,9 +5,12 @@ import 'tags_screen.dart';
 import 'reputation_screen.dart';
 import 'users_list_screen.dart';
 import 'all_questions_screen.dart';
+import 'search_screen.dart';
+import 'leaderboard_screen.dart';
 import 'unanswered_questions_screen.dart';
 import 'saved_questions_screen.dart';
 import 'help_screen.dart';
+import 'my_tickets_screen.dart';
 import '../services/auth_service.dart';
 import 'about_screen.dart';
 import 'about_community_screen.dart';
@@ -28,7 +31,7 @@ class ExploreScreen extends StatelessWidget {
             children: [
               // Header
               Container(
-                margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                margin: const EdgeInsets.fromLTRB(16, 24, 16, 32),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -46,10 +49,10 @@ class ExploreScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Jelajahi Forum',
                       style: TextStyle(
                         fontSize: 24,
@@ -57,13 +60,46 @@ class ExploreScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Temukan komunitas, topik menarik, dan diskusi yang relevan untuk bisnis Anda.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Color(0xFFECFDF5),
                         height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SearchScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(LucideIcons.search,
+                                size: 20, color: Color(0xFF94A3B8)),
+                            SizedBox(width: 12),
+                            Text(
+                              'Cari topik, komunitas, diskusi...',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -127,11 +163,23 @@ class ExploreScreen extends StatelessWidget {
                                   builder: (_) => const TagsScreen())),
                         ),
                         _buildMenuCard(
-                          'Reputasi',
-                          'Member teraktif',
-                          LucideIcons.trophy,
+                          'Leaderboard',
+                          'Top kontributor',
+                          LucideIcons
+                              .barChart, // Changed icon to represent leaderboard
                           const Color(0xFF059669),
                           const Color(0xFFECFDF5),
+                          () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const LeaderboardScreen())),
+                        ),
+                        _buildMenuCard(
+                          'Reputasi Anda', // Changed label to clarify
+                          'Statistik saya',
+                          LucideIcons.trophy,
+                          const Color(0xFF0D9488), // Consistent teal color
+                          const Color(0xFFCCFBF1),
                           () async {
                             final authService = AuthService();
                             await authService.init();
@@ -156,6 +204,18 @@ class ExploreScreen extends StatelessWidget {
                               MaterialPageRoute(
                                   builder: (_) => const UsersListScreen())),
                         ),
+                        _buildMenuCard(
+                          'Disimpan',
+                          'Koleksi Anda',
+                          LucideIcons.bookmark,
+                          const Color(0xFF0D9488),
+                          const Color(0xFFCCFBF1),
+                          () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SavedQuestionsScreen())),
+                        ),
                       ],
                     ),
                   ],
@@ -174,7 +234,7 @@ class ExploreScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 4, bottom: 16),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.helpCircle,
+                          const Icon(LucideIcons.messageCircle,
                               size: 16, color: Color(0xFF0F172A)),
                           const SizedBox(width: 8),
                           Text(
@@ -203,6 +263,19 @@ class ExploreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildNavTile(
+                      'Pertanyaan Populer',
+                      'Diskusi paling ramai',
+                      LucideIcons.trendingUp,
+                      const Color(0xFF059669),
+                      const Color(0xFFECFDF5),
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AllQuestionsScreen(
+                                  initialSort: 'popular'))),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildNavTile(
                       'Belum Terjawab',
                       'Bantu jawab pertanyaan',
                       LucideIcons.helpCircle,
@@ -214,17 +287,48 @@ class ExploreScreen extends StatelessWidget {
                               builder: (_) =>
                                   const UnansweredQuestionsScreen())),
                     ),
-                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Support Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 16),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.lifeBuoy,
+                              size: 16, color: Color(0xFF0F172A)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'LAINNYA',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              color: const Color(0xFF0F172A)
+                                  .withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     _buildNavTile(
-                      'Disimpan',
-                      'Koleksi diskusi Anda',
-                      LucideIcons.bookmark,
+                      'Tiket Saya',
+                      'Riwayat bantuan support',
+                      LucideIcons.ticket,
                       const Color(0xFF059669),
                       const Color(0xFFECFDF5),
                       () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const SavedQuestionsScreen())),
+                              builder: (_) => const MyTicketsScreen())),
                     ),
                     const SizedBox(height: 12),
                     _buildNavTile(

@@ -151,53 +151,89 @@ class _ReputationScreenState extends State<ReputationScreen> {
                   const SizedBox(height: 12),
 
                   if (_activities.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(child: Text('Belum ada aktivitas')),
-                    )
-                  else
                     Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF1F5F9)),
                       ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _activities.length,
-                        separatorBuilder: (_, __) =>
-                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                        itemBuilder: (context, index) =>
-                            _buildActivityItem(_activities[index]),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(LucideIcons.activity,
+                                size: 32, color: Color(0xFF94A3B8)),
+                          ),
+                          const SizedBox(height: 16),
+                          const Center(
+                              child: Text('Belum ada aktivitas',
+                                  style: TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500))),
+                        ],
                       ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _activities.length,
+                      itemBuilder: (context, index) {
+                        final activity = _activities[index];
+                        final isLast = index == _activities.length - 1;
+                        return _buildTimelineItem(activity, isLast);
+                      },
                     ),
 
                   const SizedBox(height: 32),
 
                   // System Poin Info
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                          colors: [Color(0xFF064E3B), Color(0xFF065F46)]),
-                      borderRadius: BorderRadius.circular(16),
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(LucideIcons.star, color: Color(0xFFFBBF24)),
-                            SizedBox(width: 12),
-                            Text('Sistem Poin',
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(LucideIcons.zap,
+                                  color: Color(0xFFFBBF24), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Sistem Poin',
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16)),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
                         _buildPointInfo('Jawaban Terbaik', '+15'),
                         _buildPointInfo('Dapat Upvote', '+10'),
                         _buildPointInfo('Buat Pertanyaan', '+5'),
@@ -302,69 +338,194 @@ class _ReputationScreenState extends State<ReputationScreen> {
     );
   }
 
-  Widget _buildActivityItem(ReputationActivity activity) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  Widget _buildTimelineItem(ReputationActivity activity, bool isLast) {
+    return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(_getIcon(activity.type),
-                size: 18, color: const Color(0xFF059669)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
+          // Timeline Column
+          SizedBox(
+            width: 50,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                        child: Text(activity.description,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: Color(0xFF0F172A)))),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text('+${activity.points}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF047857),
-                              fontSize: 11)),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border:
+                        Border.all(color: const Color(0xFF059669), width: 2),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      color: const Color(0xFFE2E8F0),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF1F5F9)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF64748B).withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                if (activity.questionTitle != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(activity.questionTitle!,
-                        style: const TextStyle(
-                            color: Color(0xFF64748B), fontSize: 12),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                const SizedBox(height: 4),
-                Text(_formatDate(activity.date),
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF94A3B8))),
-              ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getTypeColor(activity.type)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_getIcon(activity.type),
+                                  size: 12,
+                                  color: _getTypeColor(activity.type)),
+                              const SizedBox(width: 6),
+                              Text(
+                                _getTypeLabel(activity.type),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _getTypeColor(activity.type),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          _formatDate(activity.date),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      activity.description,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (activity.questionTitle != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(LucideIcons.messageCircle,
+                                size: 14, color: Color(0xFF64748B)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                activity.questionTitle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Text(
+                          'Poin Diperoleh',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color:
+                                const Color(0xFF64748B).withValues(alpha: 0.8),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '+${activity.points}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'question_upvote':
+      case 'answer_upvote':
+        return const Color(0xFF059669);
+      case 'answer_accepted':
+        return const Color(0xFF0284C7);
+      case 'question_posted':
+        return const Color(0xFFD97706);
+      default:
+        return const Color(0xFF64748B);
+    }
+  }
+
+  String _getTypeLabel(String type) {
+    switch (type) {
+      case 'question_upvote':
+        return 'UPVOTE';
+      case 'answer_upvote':
+        return 'UPVOTE';
+      case 'answer_accepted':
+        return 'JAWABAN VALID';
+      case 'question_posted':
+        return 'PERTANYAAN';
+      default:
+        return 'AKTIVITAS';
+    }
   }
 
   IconData _getIcon(String type) {
