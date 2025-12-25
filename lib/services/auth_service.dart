@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../config/app_config.dart';
 import '../models/user_profile.dart';
@@ -9,13 +10,12 @@ class AuthService {
   // URL is now configured in AppConfig - toggle isProduction to switch
   static String get baseUrl => AppConfig.authUrl;
 
-  // Google Sign-In akan menggunakan access_token untuk autentikasi
-  // karena Firebase project (diskusi-bisnis) dan Backend menggunakan Google Cloud project berbeda
-  // Backend akan memverifikasi access_token via Google userinfo API
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile', 'openid'],
     // Tidak menggunakan serverClientId karena project berbeda
   );
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // --- Auth State ---
   String? _token;
@@ -26,15 +26,27 @@ class AuthService {
   bool get isAuthenticated => _token != null;
 
   Future<void> init() async {
+    // Migrate from SharedPreferences if needed (Security Upgrade)
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token');
+
+    // Check old storage first
+    if (prefs.containsKey('auth_token')) {
+      final oldToken = prefs.getString('auth_token');
+      if (oldToken != null) {
+        await _secureStorage.write(key: 'auth_token', value: oldToken);
+        await prefs.remove('auth_token'); // Clear from insecure storage
+      }
+    }
+
+    _token = await _secureStorage.read(key: 'auth_token');
+
     if (_token != null) {
       final userData = prefs.getString('user_data');
       if (userData != null) {
         _currentUser = UserProfile.fromJson(jsonDecode(userData));
       } else {
         // Fallback or force logout if data missing?
-        // For now, let's leave currentUser null or try to fetch it if we had a /me endpoint
+        // For now, check validity or logout
       }
     }
   }
@@ -50,15 +62,17 @@ class AuthService {
       );
 
       print('Login Response Status: ${response.statusCode}');
-      // Removed verbose response body log
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['data']['token'];
         _currentUser = UserProfile.fromJson(data['data']['user']);
 
+        // Save token to Secure Storage
+        await _secureStorage.write(key: 'auth_token', value: _token);
+
+        // Save user data to SharedPreferences (less sensitive)
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
         await prefs.setString('user_data', jsonEncode(data['data']['user']));
         return true;
       } else {
@@ -109,8 +123,9 @@ class AuthService {
         _token = data['data']['token'];
         _currentUser = UserProfile.fromJson(data['data']['user']);
 
+        await _secureStorage.write(key: 'auth_token', value: _token);
+
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
         await prefs.setString('user_data', jsonEncode(data['data']['user']));
         return true;
       } else {
@@ -137,8 +152,9 @@ class AuthService {
         _token = data['data']['token'];
         _currentUser = UserProfile.fromJson(data['data']['user']);
 
+        await _secureStorage.write(key: 'auth_token', value: _token);
+
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
         await prefs.setString('user_data', jsonEncode(data['data']['user']));
         return true;
       } else {
@@ -201,8 +217,9 @@ class AuthService {
         _token = data['data']['token'];
         _currentUser = UserProfile.fromJson(data['data']['user']);
 
+        await _secureStorage.write(key: 'auth_token', value: _token);
+
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
         await prefs.setString('user_data', jsonEncode(data['data']['user']));
         return true;
       } else {
@@ -221,8 +238,8 @@ class AuthService {
       String displayName, String bio, String? avatarUrl) async {
     try {
       if (_currentUser == null) throw Exception('User not logged in');
-      final token = _token ??
-          (await SharedPreferences.getInstance()).getString('auth_token');
+      final token = _token ?? await _secureStorage.read(key: 'auth_token');
+
       if (token == null) throw Exception('Token not found');
 
       final rootUrl = baseUrl.replaceAll('/auth', '');
@@ -267,8 +284,7 @@ class AuthService {
       String base64Image, String displayName, String bio) async {
     try {
       if (_currentUser == null) throw Exception('User not logged in');
-      final token = _token ??
-          (await SharedPreferences.getInstance()).getString('auth_token');
+      final token = _token ?? await _secureStorage.read(key: 'auth_token');
       if (token == null) throw Exception('Token not found');
 
       final rootUrl = baseUrl.replaceAll('/auth', '');
@@ -305,8 +321,7 @@ class AuthService {
   Future<bool> deleteAvatar() async {
     try {
       if (_currentUser == null) throw Exception('User not logged in');
-      final token = _token ??
-          (await SharedPreferences.getInstance()).getString('auth_token');
+      final token = _token ?? await _secureStorage.read(key: 'auth_token');
       if (token == null) throw Exception('Token not found');
 
       final rootUrl = baseUrl.replaceAll('/auth', '');
@@ -338,8 +353,7 @@ class AuthService {
   Future<bool> deleteAccount(String? password) async {
     try {
       if (_currentUser == null) throw Exception('User not logged in');
-      final token = _token ??
-          (await SharedPreferences.getInstance()).getString('auth_token');
+      final token = _token ?? await _secureStorage.read(key: 'auth_token');
       if (token == null) throw Exception('Token not found');
 
       final rootUrl = baseUrl.replaceAll('/auth', '');
@@ -370,8 +384,14 @@ class AuthService {
     _token = null;
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+
+    // Clear storage
+    await _secureStorage.delete(key: 'auth_token');
     await prefs.remove('user_data');
+
+    // Legacy cleanup just in case
+    await prefs.remove('auth_token');
+
     await _googleSignIn.signOut();
   }
 }
