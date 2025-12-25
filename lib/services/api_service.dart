@@ -14,6 +14,29 @@ class ApiService {
   // URL is now configured in AppConfig - toggle isProduction to switch
   static String get baseUrl => AppConfig.apiUrl;
 
+  // Reset password with token
+  Future<bool> resetPassword(String token, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'token': token,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Gagal me-reset password');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<Question>> getQuestions(
       {String search = '',
       String tag = '',

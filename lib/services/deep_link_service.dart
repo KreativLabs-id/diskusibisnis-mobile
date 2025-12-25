@@ -88,6 +88,14 @@ class DeepLinkService {
         if (pathSegments.first == 'ask') {
           return {'route': 'ask', 'params': {}};
         }
+
+        // /reset-password?token=...
+        if (pathSegments.first == 'reset-password') {
+          return {
+            'route': 'reset_password',
+            'params': {'token': uri.queryParameters['token']}
+          };
+        }
       }
 
       // Handle custom scheme diskusibisnis://

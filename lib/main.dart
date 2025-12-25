@@ -15,6 +15,7 @@ import 'screens/profile_screen.dart';
 import 'screens/community_detail_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/ask_question_screen.dart';
+import 'screens/reset_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,7 +71,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
   Future<void> _initialize() async {
     // Minimum splash duration 1.2 detik
     final splashFuture = Future.delayed(const Duration(milliseconds: 1200));
-    
+
     try {
       await _checkAuth();
 
@@ -86,10 +87,10 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
 
       // Listen for deep links while app is running
       _deepLinkService.deepLinkStream.listen(_handleDeepLink);
-      
+
       // Wait for minimum splash duration
       await splashFuture;
-      
+
       // Handle initial deep link (app opened from link)
       if (_deepLinkService.initialLink != null) {
         _handleDeepLink(_deepLinkService.initialLink!);
@@ -99,7 +100,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
       // Still wait for splash even on error
       await splashFuture;
     }
-    
+
     // Hide splash after everything is done
     if (mounted) {
       setState(() {
@@ -113,7 +114,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
     if (parsed != null) {
       debugPrint(
           'Navigating to: ${parsed['route']} with params: ${parsed['params']}');
-      
+
       // Navigate to appropriate screen based on deep link
       _navigateToDeepLink(parsed['route'], parsed['params']);
     }
@@ -123,21 +124,22 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
     // Wait for the app to be ready before navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
+
       final navigator = Navigator.of(context);
-      
+
       switch (route) {
         case 'question':
           final questionId = params['questionId'] as String?;
           if (questionId != null) {
             navigator.push(
               MaterialPageRoute(
-                builder: (context) => QuestionDetailScreen(questionId: questionId),
+                builder: (context) =>
+                    QuestionDetailScreen(questionId: questionId),
               ),
             );
           }
           break;
-          
+
         case 'community':
           final slug = params['slug'] as String?;
           if (slug != null) {
@@ -148,18 +150,19 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
             );
           }
           break;
-          
+
         case 'profile':
           final userId = params['userId'] as String?;
           if (userId != null) {
             navigator.push(
               MaterialPageRoute(
-                builder: (context) => ProfileScreen(userId: userId, showBackButton: true),
+                builder: (context) =>
+                    ProfileScreen(userId: userId, showBackButton: true),
               ),
             );
           }
           break;
-          
+
         case 'notifications':
           navigator.push(
             MaterialPageRoute(
@@ -167,7 +170,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
             ),
           );
           break;
-          
+
         case 'ask':
           if (_isAuthenticated) {
             navigator.push(
@@ -177,7 +180,18 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
             );
           }
           break;
-          
+
+        case 'reset_password':
+          final token = params['token'] as String?;
+          if (token != null) {
+            navigator.push(
+              MaterialPageRoute(
+                builder: (context) => ResetPasswordScreen(token: token),
+              ),
+            );
+          }
+          break;
+
         default:
           // Just go to home
           break;
