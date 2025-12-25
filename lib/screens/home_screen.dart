@@ -38,8 +38,23 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      String errorMessage = 'Gagal memuat data.';
+      final String errorString = e.toString().toLowerCase();
+
+      // Check for common connectivity errors
+      if (errorString.contains('xmlhttprequest') ||
+          errorString.contains('socketexception') ||
+          errorString.contains('connection refused') ||
+          errorString.contains('connection timed out') ||
+          errorString.contains('network is unreachable')) {
+        errorMessage = 'Tidak ada koneksi internet.';
+      } else {
+        // Validation for when backend is likely down or unreachable but not strictly a network error
+        errorMessage = 'Gagal memuat data.\nPastikan server berjalan.';
+      }
+
       setState(() {
-        _error = e.toString();
+        _error = errorMessage;
         _isLoading = false;
       });
     }
@@ -158,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Icon(LucideIcons.wifiOff, size: 48, color: Colors.grey),
               const SizedBox(height: 16),
               Text(
-                'Gagal memuat data.\n$_error',
+                _error,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.grey),
               ),

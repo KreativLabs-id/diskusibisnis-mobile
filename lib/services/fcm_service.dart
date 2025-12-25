@@ -23,7 +23,8 @@ class FCMService {
 
   FCMService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // Changed to late to allow manual initialization check
+  late final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -38,6 +39,14 @@ class FCMService {
   String? get fcmToken => _fcmToken;
 
   Future<void> initialize() async {
+    // 0. Initialize Firebase Messaging Instance safely
+    try {
+      _messaging = FirebaseMessaging.instance;
+    } catch (e) {
+      print('Error Initialize FirebaseMessaging instance: $e');
+      return;
+    }
+
     // 1. Initialize Local Notifications
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@drawable/ic_notification');
