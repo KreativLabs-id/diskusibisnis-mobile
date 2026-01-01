@@ -60,7 +60,9 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
   bool _showSplash = true; // Flag untuk splash
   final FCMService _fcmService = FCMService();
   final DeepLinkService _deepLinkService = DeepLinkService();
+
   final SocketService _socketService = SocketService();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -125,7 +127,8 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final navigator = Navigator.of(context);
+      final navigator = _navigatorKey.currentState;
+      if (navigator == null) return;
 
       switch (route) {
         case 'question':
@@ -231,6 +234,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
         theme: ThemeData(
           textTheme: interTextTheme,
         ),
+        navigatorKey: _navigatorKey,
         home: const _AnimatedSplashScreen(),
       );
     }
@@ -240,6 +244,7 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
       builder: (context, currentMode, child) {
         return MaterialApp(
           title: 'DiskusiBisnis',
+          navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
           showPerformanceOverlay: false,
           showSemanticsDebugger: false,

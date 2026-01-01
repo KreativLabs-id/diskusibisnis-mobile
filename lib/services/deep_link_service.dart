@@ -54,8 +54,10 @@ class DeepLinkService {
           return {'route': 'home', 'params': {}};
         }
 
-        // /questions/:id
-        if (pathSegments.first == 'questions' && pathSegments.length > 1) {
+        // /questions/:id or /pertanyaan/:id
+        if ((pathSegments.first == 'questions' ||
+                pathSegments.first == 'pertanyaan') &&
+            pathSegments.length > 1) {
           return {
             'route': 'question',
             'params': {'questionId': pathSegments[1]}
