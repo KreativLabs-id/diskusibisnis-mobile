@@ -2,7 +2,7 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  static const bool forceProduction = false; // SET TO TRUE FOR PRODUCTION
+  static const bool forceProduction = true; // SET TO TRUE FOR PRODUCTION
 
   static bool get isProduction => kReleaseMode || forceProduction;
 
