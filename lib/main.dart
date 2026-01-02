@@ -84,43 +84,53 @@ class _DiskusiBisnisAppState extends State<DiskusiBisnisApp> {
   Future<void> _initialize() async {
     debugPrint('[Init] Starting initialization...');
 
-    // Run auth check and splash timer in parallel, but with proper error handling
-    bool authCompleted = false;
-
-    // Do auth check quickly (non-blocking)
-    _checkAuth().timeout(const Duration(seconds: 3)).then((_) {
-      debugPrint(
-          '[Init] Auth check completed. Authenticated: $_isAuthenticated');
-      authCompleted = true;
-    }).catchError((e) {
-      debugPrint('[Init] Auth check error: $e');
-      authCompleted = true;
+    // Safety net: Force hide splash after 4 seconds regardless of errors
+    // This ensures user is never stuck on splash screen
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted && _showSplash) {
+        debugPrint('[Init] Safety net triggered: Forcing splash hide');
+        _hideSplash();
+      }
     });
 
-    // Wait for minimum splash duration
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // If auth check hasn't completed yet, wait a bit more
-    if (!authCompleted) {
-      await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      // Run auth check and splash timer in parallel
+      await Future.wait([
+        // Minimum splash duration
+        Future.delayed(const Duration(milliseconds: 1500)),
+        // Auth check with short timeout
+        _checkAuth().timeout(const Duration(seconds: 3), onTimeout: () {
+          debugPrint('[Init] Auth check timed out, proceeding as guest');
+          if (mounted) {
+            setState(() {
+              _isAuthenticated = false;
+            });
+          }
+        }).catchError((e) {
+          debugPrint('[Init] Auth check error: $e');
+        }),
+      ]);
+    } catch (e) {
+      debugPrint('[Init] Initialization error: $e');
     }
 
-    debugPrint('[Init] Splash timer done, hiding splash...');
-
-    // Hide splash screen - use WidgetsBinding to ensure we're in a valid state
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _showSplash = false;
-          });
-          debugPrint('[Init] Splash hidden!');
-
-          // Do remaining initialization in background AFTER splash is hidden
-          _initializeBackgroundServices();
-        }
-      });
+    if (mounted && _showSplash) {
+      debugPrint('[Init] Initialization done, hiding splash...');
+      _hideSplash();
     }
+  }
+
+  void _hideSplash() {
+    if (!mounted) return;
+
+    setState(() {
+      _showSplash = false;
+    });
+
+    // Do remaining initialization in background AFTER splash is hidden
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeBackgroundServices();
+    });
   }
 
   void _initializeBackgroundServices() {
